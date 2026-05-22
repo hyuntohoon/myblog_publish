@@ -46,7 +46,8 @@ async def edge_guard(request: Request, call_next):
         return await call_next(request)
 
     if request.headers.get("x-origin-verify") != EDGE_SECRET:
-        logger.warning("Forbidden request to %s from %s", request.url.path, request.client.host)
+        client_ip = request.client.host if request.client else "unknown"
+        logger.warning("Forbidden request to %s from %s", request.url.path, client_ip)
         raise HTTPException(status_code=403, detail="Forbidden")
 
     return await call_next(request)
