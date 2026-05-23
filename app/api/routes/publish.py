@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from datetime import date
 import base64
+import os
 import re
 import json
 import requests
