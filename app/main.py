@@ -1,28 +1,17 @@
-import os
 import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.publish import router as publish_router
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-APP_ENV = os.getenv("APP_ENV", "prod")
-
-if APP_ENV == "dev":
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(".env")
-    except Exception:
-        pass
-
-FRONT_ORIGIN = os.getenv("FRONT_ORIGIN", "http://localhost:4321")
-EDGE_SECRET = os.getenv("EDGE_SECRET", "")
 PUBLIC_PATHS = {"/health"}
 
 app = FastAPI(title="Publisher API")
 
-allow_origins = [FRONT_ORIGIN]
-if APP_ENV == "dev":
+allow_origins = [settings.FRONT_ORIGIN]
+if settings.APP_ENV == "dev":
     allow_origins += ["http://localhost:4321", "http://127.0.0.1:4321"]
 
 app.add_middleware(
@@ -36,7 +25,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def edge_guard(request: Request, call_next):
-    if APP_ENV == "dev":
+    if settings.APP_ENV == "dev":
         return await call_next(request)
 
     if request.method == "OPTIONS":
@@ -45,7 +34,7 @@ async def edge_guard(request: Request, call_next):
     if request.url.path in PUBLIC_PATHS:
         return await call_next(request)
 
-    if request.headers.get("x-origin-verify") != EDGE_SECRET:
+    if request.headers.get("x-origin-verify") != settings.EDGE_SECRET:
         client_ip = request.client.host if request.client else "unknown"
         logger.warning("Forbidden request to %s from %s", request.url.path, client_ip)
         raise HTTPException(status_code=403, detail="Forbidden")
@@ -55,7 +44,7 @@ async def edge_guard(request: Request, call_next):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "env": APP_ENV}
+    return {"ok": True, "env": settings.APP_ENV}
 
 
 app.include_router(publish_router, prefix="/api/publish", tags=["publish"])
