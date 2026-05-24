@@ -1,6 +1,5 @@
-fastapi
-uvicorn[standard]
-requests
-python-dotenv
-mangum
-dotenv
+fastapi>=0.110,<1.0
+mangum>=0.17,<1.0
+requests>=2.31
+python-dotenv>=1.0
+pydantic-settings>=2.0

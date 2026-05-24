@@ -4,10 +4,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from datetime import date
 import base64
-import re
 import os
+import re
 import json
 import requests
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -99,8 +100,7 @@ def github_put_file(owner: str, repo: str, branch: str, path: str, content_utf8:
 @router.post("")
 def create_post(req: CreatePostReq):
     slug = req.slug or slugify(req.title)
-    base_dir = os.getenv("CONTENT_DIR", "content/blog")
-    path = f"{base_dir}/{req.posted_date.isoformat()}--{slug}/index.mdx"
+    path = f"{settings.CONTENT_DIR}/{req.posted_date.isoformat()}--{slug}/index.mdx"
 
     # body_mdx 없으면 빈 문자열
     body_content = req.body_mdx.strip() if req.body_mdx else ""
@@ -123,10 +123,10 @@ def create_post(req: CreatePostReq):
         + "\n"
     )
 
-    owner = os.getenv("GITHUB_REPO_OWNER")
-    repo = os.getenv("GITHUB_REPO_NAME")
-    branch = os.getenv("GITHUB_REPO_BRANCH", "main")
-    token = os.getenv("GITHUB_TOKEN")
+    owner = settings.GITHUB_REPO_OWNER
+    repo = settings.GITHUB_REPO_NAME
+    branch = settings.GITHUB_REPO_BRANCH
+    token = settings.GITHUB_TOKEN
 
     if not all([owner, repo, token]):
         raise HTTPException(
